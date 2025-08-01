@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload CSV</title>
+  <style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+th, td { padding: 5px }
+  </style>
+</head>
+<body>
+  <h1>Upload a CSV File</h1>
+  <form action="/cgi-bin/upload.py" method="post" enctype="multipart/form-data">
+    <label>Select CSV file:</label><br>
+    <input type="file" name="file" accept=".csv" required><br><br>
+
+    <label>Column to be processed:</label><br>
+    <input type="text" name="column" required><br><br>
+
+    <label>Number of cells to process:</label><br>
+    <input type="text" name="max_processed" required><br><br>
+
+    <label>Processing method:</label><br>
+    <input type="radio" name="method" value="spacy" checked> Spacy<br>
+    <input type="radio" name="method" value="llama33"> LLama 3.3<br><br>
+
+    <input type="submit" value="Upload">
+  </form>
+  <h2>Evaluation</h2>
+  <table>
+	  <tr><th>Task</th><th>Data set</th><th>Language</th><th>Size</th><th>System</th><th>Time</th><th>Label</th><th>Precision</th><th>Recall</th><th>F1</th><th>Label</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
+	  <tr><td>Recognition</td><td>British Museum</td><td>English</td><td>100 texts</td><td>Spacy (trf)</td><td>5.2 sec</td><td>Person</td><td>75.0%</td><td>63.3%</td><td>68.7</td><td>Location</td><td>53.7%</td><td>47.8%</td><td>50.6</td></tr>
+	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Llama 3.3</td><td>28 min 33 sec</td><td>Person</td><td>68.2%</td><td>45.3%</td><td>54.4</td><td>Location</td><td>41.2%</td><td>30.4%</td><td>35.0</td></tr>
+	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Dandelion</td><td>12.5 sec</td><td>Person</td><td>76.1%</td><td>27.3%</td><td>40.2</td><td>Location</td><td>55.6%</td><td>32.6%</td><td>41.1</td></tr>
+	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>NameTag 3</td><td>12.4 sec</td><td>Person</td><td style="background-color: lightyellow;">86.2%</td><td style="background-color: lightyellow;">73.4%</td><td style="background-color: lightyellow;">79.3</td><td>Location</td><td style="background-color: lightyellow;">65.9%</td><td style="background-color: lightyellow;">63.0%</td><td style="background-color: lightyellow;">64.4</td></tr>
+	  <tr><td>~</td><td>Egyptian Museum</td><td>~</td><td>~</td><td>Spacy (trf)</td><td>2.6 sec</td><td>Person</td><td>80.5%</td><td style="background-color: lightyellow;">91.5%</td><td>85.6</td><td>Location</td><td>20.9%</td><td>20.7%</td><td>20.8</td></tr>
+	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Llama 3.3</td><td>38 min 12 sec</td><td>Person</td><td>81.3%</td><td style="background-color: lightyellow;">91.5%</td><td style="background-color: lightyellow;">86.5</td><td>Location</td><td>31.1%</td><td>54.3%</td><td>39.5</td></tr>
+	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Dandelion</td><td>11.8 sec</td><td>Person</td><td style="background-color: lightyellow;">94.0%</td><td>71.6%</td><td>81.3</td><td>Location</td><td>6.8%</td><td>13.0%</td><td>8.9</td></tr>
+	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>NameTag 3</td><td>12.2 sec</td><td>Person</td><td>86.6%</td><td>73.3%</td><td>79.4</td><td>Location</td><td style="background-color: lightyellow;">49.7%</td><td style="background-color: lightyellow;">78.3%</td><td style="background-color: lightyellow;">60.8</td></tr>
+	  <tr><td>Disambiguation</td><td>~</td><td>~</td><td>~</td><td>Dandelion</td><td>?</td><td>Person</td><td>?</td><td>?</td><td>?</td><td>Location</td><td>?</td><td>?</td><td>?</td></tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+# dandelion: access dandelion api
+# usage: dandelion data_file.csv column_name
+# note: key might has to be refreshed every 12 hours
+# 20250723 e.tjongkimsang@esciencecenter.nl
+
+import datetime
+import polars as pl
+import requests
+import sys
+
+url = "https://api.dandelion.eu/datatxt/nex/v1/"
+
+params = {"lang": "en",
+          "text": "John Smith works in New York for Nvidia",
+          "include": "types,abstract,categories,lod",
+          "token": "d5d20a7ae23d4994947e3c36e6b863ca"}
+headers = {}
+
+
+column_name = sys.argv[2]
+start_time = datetime.datetime.now()
+df = pl.read_csv(sys.argv[1])
+counter = 1
+for text in df[column_name]:
+    params["text"] = text
+    response = requests.get(url, params=params, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        print(data)
+    else:
+        print(f"Request {counter} failed with status {response.status_code}")
+    counter += 1
+end_time = datetime.datetime.now()
+time_taken = end_time - start_time
+print("{'Processing time':", round(time_taken.total_seconds(), 2), "}")
