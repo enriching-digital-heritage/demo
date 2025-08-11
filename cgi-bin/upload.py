@@ -90,6 +90,7 @@ def process_form_data():
     entities_file = form["entities_file"] if "entities_file" in form else None
     if entities_file is None or entities_file == "" or os.path.basename(entities_file.filename) == "":
         entities_path = ""
+        entities_filename = ""
     else:
         entities_filename = os.path.basename(entities_file.filename)
         entities_path = f"/tmp/{entities_filename}"

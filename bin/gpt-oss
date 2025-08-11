@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# usage: gpt-oss input_file.csv column_name
+# 20250811 e.tjongkimsang@esciencecenter.nl
+
+import datetime
+import json
+import os
+import pandas as pd
+import regex
+import subprocess
+import sys
+
+
+def print_label(entity_label):
+    if entity_label in ["PER", "PERSON"]:
+        print(f"{entity_label}", end="")
+    elif entity_label in ["GPE", "LOC", "FAC"]:
+        print(f"{entity_label}", end="")
+    else:
+        print(f"{entity_label}", end="")
+
+
+def cleanup_string(string):
+    string = regex.sub("\s\s+", " ", string)
+    string = regex.sub("\s+;", ";", string)
+    string = regex.sub("\s([a-z-])", "\g<1>", string)
+    string = regex.sub(";;+", ";", string)
+    return string.strip()
+
+
+if True:
+    file_path = sys.argv[1]
+    data_df = pd.read_csv(file_path)
+    prompt = "Can you find the person names and locations in this text and list them in combination with the character offset with respect to the beginning of the text? Please mention only the found strings in the format: type offset string, separated by semicolons, for example: PER 23 John; LOC 45 Paris;. Here is the text:"
+    counter = 0
+    start_time = datetime.datetime.now()
+    max_processed = 100
+    column_name = sys.argv[2]
+    for text in data_df[column_name]:
+        if True:
+            result = subprocess.run("curl http://localhost:11434/api/generate -d '{" + f"\"model\": \"gpt-oss:20b\", \"prompt\": \"{prompt} {text}\"" +  "}'", shell=True, capture_output=True, text=True)
+            response_string = ""
+            for line in result.stdout.split("\n"):
+                print(line)
+                try:
+                    my_object = json.loads(line)
+                    if "response" in my_object:
+                        response_string += my_object["response"] + " "
+                except:
+                    pass
+            print(f"Entities: {cleanup_string(response_string)}")
+        counter += 1
+        if counter >= max_processed:
+            break
+    end_time = datetime.datetime.now()
+    time_taken = end_time - start_time
+    print(f"Processing time: {round(time_taken.total_seconds(), 2)} seconds")
