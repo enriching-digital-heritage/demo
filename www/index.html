@@ -18,6 +18,29 @@ th, td { padding: 5px }
   </script>
 </head>
 <body>
+  <h1>Inspect system analysis</h1>
+  <form action="/cgi-bin/inspect_runs.py" method="post" enctype="multipart/form-data">
+
+  <p>
+    <label>Task</label><br>
+      <input type="radio" name="task" value="recognition" checked> Recognition<br>
+      <input type="radio" name="task" value="disambiguation"> Disambiguation
+  </p>
+
+  <p>
+    <label>Data source</label><br>
+      <input type="radio" name="data_source" value="bm" checked> British Museum<br>
+      <input type="radio" name="data_source" value="em"> Egyptian Museum<br>
+  </p>
+  <p>
+    <label>System</label><br>
+      <input type="radio" name="system" value="nametag"> Nametag<br>
+      <input type="radio" name="system" value="spacy" checked> Spacy trf +<br>
+  </p>
+  <br><input type="submit" value="Show">
+  </form>
+
+  <hr>
   <h1>Process a CSV File</h1>
   <form action="/cgi-bin/upload.py" method="post" enctype="multipart/form-data">
     <label>Select CSV file:</label><br>
@@ -41,23 +64,7 @@ th, td { padding: 5px }
     <br><input type="submit" value="Process">
   </form>
   <hr>
-  <h2>Evaluation</h2>
-  <table>
-	  <tr><th>Task</th><th>Data set</th><th>Language</th><th>Size</th><th>System</th><th>Time</th><th>Label</th><th>Precision</th><th>Recall</th><th>F1</th><th>Label</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
-	  <tr><td>Recognition</td><td>British Museum</td><td>English</td><td>100 texts</td><td>Spacy (trf)</td><td>2.3 sec</td><td>Person</td><td>74.1%</td><td>69.6%</td><td>71.8</td><td>Location</td><td>53.7%</td><td>46.8%</td><td>50.0</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Spacy (trf) +</td><td>2.4 sec</td><td>Person</td><td>74.1%</td><td>69.6%</td><td>71.8</td><td>Location</td><td>54.2%</td><td>55.3%</td><td>54.7</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Llama 3.3</td><td>28 min 33 sec</td><td>Person</td><td>64.7%</td><td>47.8%</td><td>55.0</td><td>Location</td><td>41.2%</td><td>29.8%</td><td>34.6</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Dandelion</td><td>12.5 sec</td><td>Person</td><td>78.3%</td><td>31.3%</td><td>44.7</td><td>Location</td><td>70.4%</td><td>40.4%</td><td>51.3</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>NameTag 3</td><td>12.4 sec</td><td>Person</td><td style="background-color: lightyellow;">85.3%</td><td style="background-color: lightyellow;">80.9%</td><td style="background-color: lightyellow;">83.0</td><td>Location</td><td style="background-color: lightyellow;">72.7%</td><td style="background-color: lightyellow;">68.1%</td><td style="background-color: lightyellow;">70.3</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>gpt-oss 20b</td><td>min sec</td><td>Person</td><td>%</td><td>%</td><td></td><td>Location</td><td>%</td><td>%</td><td></td></tr>
-	  <tr><td>~</td><td>Egyptian Museum</td><td>~</td><td>~</td><td>Spacy (trf)</td><td>2.6 sec</td><td>Person</td><td>81.5%</td><td style="background-color: lightyellow;">92.1%</td><td style="background-color: lightyellow;">86.5</td><td>Location</td><td>20.9%</td><td>20.9%</td><td>20.9</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Llama 3.3</td><td>38 min 12 sec</td><td>Person</td><td>81.8%</td><td>91.5%</td><td>86.4</td><td>Location</td><td>30.4%</td><td>53.8%</td><td>38.8</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>Dandelion</td><td>11.8 sec</td><td>Person</td><td style="background-color: lightyellow;">94.0%</td><td>71.2%</td><td>81.0</td><td>Location</td><td>6.8%</td><td>13.2%</td><td>9.0</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>NameTag 3</td><td>12.2 sec</td><td>Person</td><td>87.2%</td><td>73.4%</td><td>79.7</td><td>Location</td><td style="background-color: lightyellow;">49.0%</td><td style="background-color: lightyellow;">78.0%</td><td style="background-color: lightyellow;">60.2</td></tr>
-	  <tr><td>~</td><td>~</td><td>~</td><td>~</td><td>gpt-oss 20b</td><td>min sec</td><td>Person</td><td>%</td><td>%</td><td></td><td>Location</td><td>%</td><td>%</td><td></td></tr>
-	  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-	  <tr><td>Disambiguation</td><td>~</td><td>~</td><td>~</td><td>Dandelion</td><td>12.5 sec</td><td>Person</td><td>91.7%</td><td>28.7%</td><td>43.7</td><td>Location</td><td>81.8%</td><td>38.3%</td><td>52.2</td></tr>
-  </table>
-  <p>"Spacy (trf) +" is "Spacy (trf)" with an additional list of 349 locations provided by Gethin</p>
+  <h1>Evaluation scores</h1>
+  <p>The evaluation scores moved to <a href="https://github.com/enriching-digital-heritage/eval">Github</a></p>
 </body>
 </html>
