@@ -24,18 +24,21 @@ th, td { padding: 5px }
   <p>
     <label>Task</label><br>
       <input type="radio" name="task" value="recognition" checked> Recognition<br>
-      <input type="radio" name="task" value="disambiguation"> Disambiguation
+      <input type="radio" name="task" value="disambiguation"> <s>Disambiguation</s>
   </p>
 
   <p>
     <label>Data source</label><br>
       <input type="radio" name="data_source" value="bm" checked> British Museum<br>
-      <input type="radio" name="data_source" value="em"> Egyptian Museum<br>
+      <input type="radio" name="data_source" value="em"> <s>Egyptian Museum</s><br>
   </p>
   <p>
     <label>System</label><br>
-      <input type="radio" name="system" value="nametag"> Nametag<br>
-      <input type="radio" name="system" value="spacy" checked> Spacy trf +<br>
+      <input type="checkbox" name="system" value="dandelion"> Dandelion<br>
+      <input type="checkbox" name="system" value="gptoss"> gpt-oss 20b<br>
+      <input type="checkbox" name="system" value="llama"> Llama 3.3<br>
+      <input type="checkbox" name="system" value="nametag3"> NameTag3<br>
+      <input type="checkbox" name="system" value="spacy" checked> Spacy trf +<br>
   </p>
   <br><input type="submit" value="Show">
   </form>
