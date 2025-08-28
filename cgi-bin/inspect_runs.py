@@ -100,29 +100,30 @@ def read_machine_data(task, data_source, system_list):
 
 def guess_offsets(text, entities_list, line_counter, system):
     offsets = {}
+    text = regex.sub(" 's", "'s", text)
     for entity_label in entities_list:
         if entity_label in ['p', 'l', 'PER', 'LOC']:
             for entity_text in entities_list[entity_label]:
-                pattern = regex.compile(rf"\b{entity_text}\b")
-                for counter in range(0, entities_list[entity_label][entity_text]):
-                    char_pos = -1
-                    for m in pattern.finditer(text):
-                        if m.start() not in offsets:
-                            char_pos = m.start()
-                            break
-                    if char_pos < 0:
-                        print_error_message(f"cannot find entity \"{entity_text}\" on line {line_counter} for system {system}!")
-                    else:
-                        # print(f"<br>\"{entity_text}\" with label \"{entity_label}\" starts at position {char_pos} for system \"{system}\"")
-                        entity_char_pos = 0
-                        for token in entity_text.split(" "):
-                            if entity_char_pos == 0:
-                                offsets[char_pos] = [entity_text, entity_label]
-                            elif char_pos + entity_char_pos in offsets:
-                                print_error_message(f"position {char_pos + entity_char_pos} is already in offsets for line {line_counter} of system \"{system}\"")
-                            else:
-                                offsets[char_pos + entity_char_pos] = [entity_text[entity_char_pos:], None]
-                            entity_char_pos += len(token) + 1
+                if len(entity_text) > 1:
+                    pattern = regex.compile(rf"{entity_text}")
+                    for counter in range(0, entities_list[entity_label][entity_text]):
+                        char_pos = -1
+                        for m in pattern.finditer(text):
+                            if m.start() not in offsets:
+                                char_pos = m.start()
+                                break
+                        if char_pos < 0:
+                            print_error_message(f"cannot find entity \"{entity_text}\" on line {line_counter} for system {system}!")
+                        else:
+                            entity_char_pos = 0
+                            for token in entity_text.split(" "):
+                                if entity_char_pos == 0:
+                                    offsets[char_pos] = [entity_text, entity_label]
+                                elif char_pos + entity_char_pos in offsets:
+                                    print_error_message(f"position {char_pos + entity_char_pos} is already in offsets for line {line_counter} of system \"{system}\"")
+                                else:
+                                    offsets[char_pos + entity_char_pos] = [entity_text[entity_char_pos:], None]
+                                entity_char_pos += len(token) + 1
     return offsets
 
 
