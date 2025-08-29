@@ -31,11 +31,11 @@ def print_html_header():
 
 def print_label(entity_label):
     if entity_label in ["PER", "PERSON"]:
-        print(f"<font color=\"red\"><strong>{entity_label}</strong></font>", end="")
+        print(f"<font style=\"color: red;\"><strong>{entity_label}</strong></font>", end="")
     elif entity_label in ["GPE", "LOC", "FAC"]:
-        print(f"<font color=\"green\"><strong>{entity_label}</strong></font>", end="")
+        print(f"<font style=\"color: green;\"><strong>{entity_label}</strong></font>", end="")
     else:
-        print(f"<font color=\"black\"><strong>{entity_label}</strong></font>", end="")
+        print(f"<font style=\"color: black;\"><strong>{entity_label}</strong></font>", end="")
 
 
 def report_time_taken(start_time):
@@ -54,7 +54,7 @@ def process_form_data():
 
 
 def print_error_message(text):
-    print(f"<br><font style=\"color:red\">ERROR: {text}</font>")
+    print(f"<font style=\"color:darkred;\">ERROR: {text}</font><br>")
 
 
 GOLD_DATA_FILE_RECOGNITION_BM = "/home/etjongkims/projects/enriching/data/gethin/bm-dataset-cut-random-100-annotations.txt"
@@ -63,11 +63,20 @@ MACHINE_DATA_FILE_RECOGNITION_BM_NAMETAG3 = "/home/etjongkims/projects/enriching
 MACHINE_DATA_FILE_RECOGNITION_BM_LLAMA = "/home/etjongkims/projects/enriching/data/gethin/llama_output_100.txt"
 MACHINE_DATA_FILE_RECOGNITION_BM_GPTOSS = "/home/etjongkims/projects/enriching/data/gethin/gpt-oss_output.txt"
 MACHINE_DATA_FILE_RECOGNITION_BM_DANDELION = "/home/etjongkims/projects/enriching/data/gethin/dandelion_output.txt"
+GOLD_DATA_FILE_RECOGNITION_EM = "/home/etjongkims/projects/enriching/data/rossana/Wikimedia-random-100-annotations.txt"
+MACHINE_DATA_FILE_RECOGNITION_EM_SPACY = "/home/etjongkims/projects/enriching/data/rossana/spacy_trf_output_100.txt"
+MACHINE_DATA_FILE_RECOGNITION_EM_NAMETAG3 = "/home/etjongkims/projects/enriching/data/rossana/nametag3_output_evaluate.txt"
+MACHINE_DATA_FILE_RECOGNITION_EM_LLAMA = "/home/etjongkims/projects/enriching/data/rossana/llama3_output.txt"
+MACHINE_DATA_FILE_RECOGNITION_EM_GPTOSS = "/home/etjongkims/projects/enriching/data/rossana/gpt-oss_output.txt"
+MACHINE_DATA_FILE_RECOGNITION_EM_DANDELION = "/home/etjongkims/projects/enriching/data/rossana/dandelion_output.txt"
 
 
 def read_gold_data(task, data_source):
     if task == "recognition" and data_source == "bm":
         texts, gold_entities = utils.read_annotations(GOLD_DATA_FILE_RECOGNITION_BM)
+        return texts, gold_entities
+    elif task == "recognition" and data_source == "em":
+        texts, gold_entities = utils.read_annotations(GOLD_DATA_FILE_RECOGNITION_EM)
         return texts, gold_entities
     else:
         print_error_message(f"Either task \"{task}\" or data source \"{data_source}\" or their combination is not known")
@@ -88,6 +97,16 @@ def read_machine_data(task, data_source, system_list):
             entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_BM_GPTOSS)
         elif task == "recognition" and data_source == "bm" and system == "dandelion":
             entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_BM_DANDELION)
+        elif task == "recognition" and data_source == "em" and system == "spacy":
+            entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_EM_SPACY)
+        elif task == "recognition" and data_source == "em" and system == "nametag3":
+            entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_EM_NAMETAG3)
+        elif task == "recognition" and data_source == "em" and system == "llama":
+            entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_EM_LLAMA)
+        elif task == "recognition" and data_source == "em" and system == "gptoss":
+            entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_EM_GPTOSS)
+        elif task == "recognition" and data_source == "em" and system == "dandelion":
+            entities = utils.read_machine_analysis(MACHINE_DATA_FILE_RECOGNITION_EM_DANDELION)
         else:
             print_error_message(f"Either task \"{task}\" or data source \"{data_source}\" or system \"{system}\" or their combination is not known")
         if entities:
@@ -98,29 +117,61 @@ def read_machine_data(task, data_source, system_list):
     return machine_entities
 
 
+def find_entity_in_text(text, entity_text, offsets):
+    pattern = regex.compile(rf"{entity_text}")
+    char_pos = -1
+    for m in pattern.finditer(text):
+        if m.start() not in offsets:
+            char_pos = m.start()
+            break
+    return char_pos
+
+
 def guess_offsets(text, entities_list, line_counter, system):
     offsets = {}
-    text = regex.sub(" 's", "'s", text)
+    seen = {}
     for entity_label in entities_list:
         if entity_label in ['p', 'l', 'PER', 'LOC']:
             for entity_text in entities_list[entity_label]:
                 if len(entity_text) > 1:
-                    pattern = regex.compile(rf"{entity_text}")
                     for counter in range(0, entities_list[entity_label][entity_text]):
-                        char_pos = -1
-                        for m in pattern.finditer(text):
-                            if m.start() not in offsets:
-                                char_pos = m.start()
-                                break
+                        if entity_text in seen:
+                            seen[entity_text] += 1
+                        else:
+                            seen[entity_text] = 1
+                        char_pos = find_entity_in_text(text, entity_text, offsets)
                         if char_pos < 0:
-                            print_error_message(f"cannot find entity \"{entity_text}\" on line {line_counter} for system {system}!")
+                            alternative_entity_text = regex.sub("(of|van|de|de|the)", " \g<1>", entity_text)
+                            char_pos = find_entity_in_text(text, alternative_entity_text, offsets)
+                            #print("<br>", system, entity_text, alternative_entity_text, char_pos, text)
+                            if char_pos >= 0:
+                                entity_text = alternative_entity_text
+                        if char_pos < 0:
+                            alternative_entity_text = regex.sub(" ", "", entity_text)
+                            char_pos = find_entity_in_text(text, alternative_entity_text, offsets)
+                            if char_pos >= 0:
+                                entity_text = alternative_entity_text
+                        if char_pos < 0:
+                            alternative_entity_text = regex.sub("'s", " 's", entity_text)
+                            alternative_entity_text = regex.sub("el-", "el - ", alternative_entity_text)
+                            alternative_entity_text = regex.sub("n-R", "n - R", alternative_entity_text)
+                            alternative_entity_text = regex.sub("-R", "- R", alternative_entity_text)
+                            alternative_entity_text = regex.sub("([a-z])([A-Z])", "\g<1> \g<2>", alternative_entity_text)
+                            char_pos = find_entity_in_text(text, alternative_entity_text, offsets)
+                            if char_pos >= 0:
+                                entity_text = alternative_entity_text
+                        if char_pos < 0:
+                            freq = "" if seen[entity_text] == 1 else f" ({seen[entity_text]})"
+                            print_error_message(f"cannot find entity \"{entity_text}\"{freq} on line {line_counter} for system {system}!")
                         else:
                             entity_char_pos = 0
                             for token in entity_text.split(" "):
                                 if entity_char_pos == 0:
                                     offsets[char_pos] = [entity_text, entity_label]
                                 elif char_pos + entity_char_pos in offsets:
-                                    print_error_message(f"position {char_pos + entity_char_pos} is already in offsets for line {line_counter} of system \"{system}\"")
+                                    print_error_message(f"position {char_pos + entity_char_pos} of entity \"{entity_text}\" is already in an entity for line {line_counter} of system \"{system}\"")
+                                    del(offsets[char_pos])
+                                    break
                                 else:
                                     offsets[char_pos + entity_char_pos] = [entity_text[entity_char_pos:], None]
                                 entity_char_pos += len(token) + 1
@@ -151,7 +202,6 @@ def show_text(text, gold_entities_list, machine_entities_dict, line_counter):
     print("</td></tr>")
     for system in sorted(machine_entities_dict):
         machine_offsets = guess_offsets(text, machine_entities_dict[system], line_counter, system)
-        #print("<tr><td></td><td></td><td>", machine_offsets, "</td></tr>")
         print(f"<tr><td></td><td>{system}</td><td>")
         print_text_with_entities(text, machine_offsets)
         print("</td></tr>")
@@ -163,6 +213,7 @@ task, data_source, system_list = process_form_data()
 texts, gold_entities = read_gold_data(task, data_source)
 machine_entities = read_machine_data(task, data_source, system_list)
 print(f"<h1>Results task \"{task}\"</h1>")
+print(f"<p>Meaning of colors: red: <font style=\"color:red;\">PERSON</font>; green: <font style=\"color:green;\">LOCATION</font>")
 print("<table><tr><th align=\"left\">Id</th><th align=\"left\">System</th><th align=\"left\">Text</th></tr>")
 counter = 1
 for text, gold_entities_list, machine_entities_dict in zip(texts, gold_entities, machine_entities):
