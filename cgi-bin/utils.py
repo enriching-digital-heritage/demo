@@ -1,6 +1,7 @@
 # usage: import utils
 
 
+import polars as pl
 import regex
 import sys
 
@@ -133,3 +134,15 @@ def read_annotations(file_name):
                 current_entity_text = token_text
     add_text(texts, entities, current_text, current_entities, current_entity_text, current_entity_label)
     return texts, entities
+
+
+def read_disambiguation_analysis(file_name, TEXT_LENGTH=100):
+    """Read annotations and machine analysis and return them in a list"""
+    df = pl.read_csv(file_name)
+    df_columns = df.columns
+    data_list = []
+    for line_nbr in range(1, TEXT_LENGTH + 1):
+        data_list.append([{key: value for key, value in zip(df_columns, row)}
+                          for row in df.filter(pl.col("line_nbr") == line_nbr).iter_rows()])
+    return data_list
+
