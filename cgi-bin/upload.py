@@ -8,6 +8,7 @@ import os
 import pandas as pd
 import polars as pl
 import regex
+import requests
 import spacy
 from spacy.matcher import Matcher
 import subprocess
@@ -82,36 +83,47 @@ def process_form_data():
     file_item = form["file"] if "file" in form else None
     column_names = [column_name.strip() for column_name in form.getfirst("column", "").strip().split(",")]
     method = form.getfirst("method", "").strip()
-    try:
-        max_processed = int(form.getfirst("max_processed", "").strip())
-    except:
-        print("ERROR. Please go back and specify number of cells to process")
-        sys.exit(1)
     entities_file = form["entities_file"] if "entities_file" in form else None
     if entities_file is None or entities_file == "" or os.path.basename(entities_file.filename) == "":
         entities_path = ""
         entities_filename = ""
     else:
         entities_filename = os.path.basename(entities_file.filename)
+        entities_filename = str(os.getpid()) + "-" + entities_filename
         entities_path = f"/tmp/{entities_filename}"
         with open(entities_path, "wb") as f:
             f.write(entities_file.file.read())
             f.close()
     
-    if "file" not in form or not form["file"].filename:
-        print("ERROR. No file uploaded")
-        sys.exit(1)
-    elif len(column_names) == 0:
-        print("ERROR. Column name not provided")
-        sys.exit(1)
+    if "text" in form:
+        file_name = str(os.getpid()) + "-text.txt"
+        file_path = f"/tmp/{file_name}"
+        text = f"text\n\"{form.getfirst('text', '')}\""
+        with open(file_path, "w") as f:
+            f.write(text)
+            f.close()
+        return file_name, file_path, ["text"], 1, method, entities_filename, entities_path
+    else:
+        if not form["file"].filename:
+            print("ERROR. No file uploaded")
+            sys.exit(1)
+        elif len(column_names) == 0:
+            print("ERROR. Column name not provided")
+            sys.exit(1)
     
-    file_name = os.path.basename(file_item.filename)
-    file_path = f"/tmp/{file_name}"
+        file_name = os.path.basename(file_item.filename)
+        file_name = str(os.getpid()) + "-" + file_name
+        file_path = f"/tmp/{file_name}"
+        try:
+            max_processed = int(form.getfirst("max_processed", "").strip())
+        except:
+            print("ERROR. Please go back and specify number of cells to process")
+            sys.exit(1)
     
-    with open(file_path, "wb") as f:
-        f.write(file_item.file.read())
-        f.close()
-    return file_name, file_path, column_names, max_processed, method, entities_filename, entities_path
+        with open(file_path, "wb") as f:
+            f.write(file_item.file.read())
+            f.close()
+        return file_name, file_path, column_names, max_processed, method, entities_filename, entities_path
 
 
 def read_data_file(file_name, file_path, column_names):
@@ -147,11 +159,11 @@ def setup_spacy(entities_path, entities_filename):
     return nlp, matcher
 
 
-llama_prompt = "Can you find the person names and locations in this text and list them in combination with the character offset with respect to the beginning of the text? Please mention only the found strings in the format: type offset string, for example: PER 23 John and LOC 45 Paris. Here is the text:"
+llm_prompt = "Can you find the person names and locations in this text and list them in combination with the character offset with respect to the beginning of the text? Please mention only the found strings in the format: type offset string, for example: PER 23 John and LOC 45 Paris. Here is the text:"
 
 
-def process_with_llama(llama_prompt, text):
-    result = subprocess.run("curl http://localhost:11434/api/generate -d '{" + f"\"model\": \"llama3.3\", \"prompt\": \"{llama_prompt} {text}\"" +  "}'", shell=True, capture_output=True, text=True)
+def process_with_llm(llm_prompt, text):
+    result = subprocess.run("curl http://localhost:11434/api/generate -d '{" + f"\"model\": \"gpt-oss:20b\", \"prompt\": \"{llm_prompt} {text}\"" +  "}'", shell=True, capture_output=True, text=True)
     print("<br>Entities: ")
 
     response_string = ""
@@ -182,10 +194,72 @@ def process_with_spacy(text):
             print(f": {entity.text};")
 
 
+def process_with_dandelion(text):
+    with open("dandelion_token.txt", "r") as infile:
+        dandelion_token = infile.read().strip()
+        infile.close()
+    url = "https://api.dandelion.eu/datatxt/nex/v1/"
+    params = {"lang": "en",
+              "text": f"{text}",
+              "include": "types,abstract,categories,lod",
+              "token": dandelion_token}
+    headers = {}
+    response = requests.get(url, params=params, headers=headers)
+    if response.status_code == 200:
+        print("<br>")
+        for entity in response.json()["annotations"]:
+            entity_text = entity["spot"]
+            types = [type.split("/")[-1] for type in entity["types"]]
+            if "Animal" in types or "Person" in types or "Deity" in types:
+                entity_label = "PER"
+            elif "Location" in types or "Place" in types:
+                entity_label = "LOC"
+            else:
+                entity_label = "OTHER"
+            print_label(entity_label)
+            print(f": {entity_text};")
+    else:
+        print(f"Request {counter} failed with status {response.status_code}")
+
+
+def extract_entities_from_conll_format(text):
+    entities = []
+    last_label = ""
+    for line in text.split("\n"):
+        if line.strip() == "":
+            last_label = ""
+        else:
+            token_text, token_label = line.strip().split()
+            if token_label == "O":
+                last_label = ""
+            else:
+                iob, label = token_label.split("-")
+                if iob == "I" and label == last_label:
+                    entities[-1] = [entities[-1][0], entities[-1][1] + " " + token_text]
+                else:
+                    entities.append([label, token_text])
+                    last_label = label
+    return entities
+
+
+def process_with_nametag3(text):
+    tokenization = nlp(text)
+    result = subprocess.run("/home/etjongkims/software/nametag3/run", 
+                            input="\n".join([str(token) for token in tokenization]),
+                            shell=True, 
+                            capture_output=True, 
+                            text=True)
+    if result.stdout.strip() != "":
+        print("<br>")
+    for entity in extract_entities_from_conll_format(result.stdout):
+        print_label(entity[0])
+        print(f": {entity[1]};")
+
+
 def report_time_taken(start_time):
     end_time = datetime.datetime.now()
     time_taken = end_time - start_time
-    print(f"Processing time: {round(time_taken.total_seconds(), 2)} seconds")
+    print(f"Processing time: {round(time_taken.total_seconds(), 2)} seconds (maximum is one minute)")
 
 
 def print_html_footer():
@@ -195,7 +269,7 @@ def print_html_footer():
 print_html_header()
 file_name, file_path, column_names, max_processed, method, entities_filename, entities_path = process_form_data()
 data_df = read_data_file(file_name, file_path, column_names)
-if method == "spacy":
+if method in ["nametag3", "spacy"]:
     nlp, matcher = setup_spacy(entities_path, entities_filename)
 show_processing_parameters(file_path, column_names, max_processed, method, entities_path)
 counter = 0
@@ -205,12 +279,16 @@ for row_list in data_df.iter_rows():
     row_dict = dict(zip(data_df.columns, row_list))
     text = '\n'.join([str(row_dict[column_name] or "").strip() + "." for column_name in column_names if str(row_dict[column_name] or "").strip() != ""])
     print("<li><i>", text, "</i>")
-    if method == "llama33":
-        process_with_llama(llama_prompt, text)
+    if method == "dandelion":
+        process_with_dandelion(text)
+    elif method == "llm":
+        process_with_llm(llm_prompt, text)
+    elif method == "nametag3":
+        process_with_nametag3(text)
     elif method == "spacy":
         process_with_spacy(text)
     else:
-        print("Unknown text processing method: {method}!")
+        print(f"Unknown text processing method: {method}!")
     print("</li><br>")
     counter += 1
     if counter >= max_processed:

@@ -24,23 +24,44 @@ th, td { padding: 5px }
   <p>
     <label>Task</label><br>
       <input type="radio" name="task" value="recognition" checked> Recognition<br>
-      <input type="radio" name="task" value="disambiguation"> <s>Disambiguation</s>
+      <input type="radio" name="task" value="disambiguation"> Disambiguation (only with Dandelion and NameTag3)
   </p>
 
   <p>
     <label>Data source</label><br>
       <input type="radio" name="data_source" value="bm" checked> British Museum<br>
-      <input type="radio" name="data_source" value="em"> Egyptian Museum<br>
+      <input type="radio" name="data_source" value="em"> Egyptian Museum (only with Recognition)<br>
   </p>
   <p>
     <label>System</label><br>
       <input type="checkbox" name="system" value="dandelion"> Dandelion<br>
       <input type="checkbox" name="system" value="gptoss"> gpt-oss 20b<br>
       <input type="checkbox" name="system" value="llama"> Llama 3.3<br>
-      <input type="checkbox" name="system" value="nametag3"> NameTag3<br>
-      <input type="checkbox" name="system" value="spacy" checked> Spacy trf +<br>
+      <input type="checkbox" name="system" value="nametag3" checked> NameTag3<br>
+      <input type="checkbox" name="system" value="spacy"> Spacy trf +<br>
   </p>
   <br><input type="submit" value="Show">
+  </form>
+
+  <hr>
+  <h1>Process an English text</h1>
+  <form action="/cgi-bin/upload.py" method="post" enctype="multipart/form-data">
+    <label>Text:</label><br>
+    <textarea rows="5" cols="80" name="text"></textarea><br>
+    <p>
+      <label>Task</label><br>
+        <input type="radio" name="task" value="recognition" checked> Recognition<br>
+	<input type="radio" name="task" value="disambiguation"> <s>Disambiguation</s>
+    </p>
+    <p>
+      <label>Processing method:</label><br>
+      <input type="radio" name="method" value="dandelion"> Dandelion<br>
+      <input type="radio" name="method" value="llm"> LLM (gpt-oss:20b)<br>
+      <input type="radio" name="method" value="nametag3"> NameTag3<br>
+      <input type="radio" name="method" value="spacy" checked> Spacy<br>
+    </p>
+
+    <br><input type="submit" value="Process">
   </form>
 
   <hr>
@@ -52,12 +73,14 @@ th, td { padding: 5px }
     <label>Column(s) to be processed (separate by commas):</label><br>
     <input type="text" name="column" required><br><br>
 
-    <label>Number of cells to process:</label><br>
+    <label>Number of cells to process (use 1 for LLMs):</label><br>
     <input type="text" name="max_processed" required><br><br>
 
     <label>Processing method:</label><br>
+    <input type="radio" name="method" value="dandelion" onclick="toggleVisibility(false)"> Dandelion<br>
+    <input type="radio" name="method" value="llm" onclick="toggleVisibility(false)"> LLM (gpt-oss:20b)<br>
+    <input type="radio" name="method" value="nametag3" onclick="toggleVisibility(false)"> NameTag3<br>
     <input type="radio" name="method" value="spacy" onclick="toggleVisibility(true)" checked> Spacy<br>
-    <input type="radio" name="method" value="llama33" onclick="toggleVisibility(false)"> LLama 3.3<br>
 
     <div id="content">
 	<br><label>Optional csv file with entities for Spacy (one per line: label, text):</label><br>
@@ -66,6 +89,7 @@ th, td { padding: 5px }
 
     <br><input type="submit" value="Process">
   </form>
+
   <hr>
   <h1>Evaluation scores</h1>
   <p>The evaluation scores moved to <a href="https://github.com/enriching-digital-heritage/eval">Github</a></p>
