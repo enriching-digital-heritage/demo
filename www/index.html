@@ -57,7 +57,7 @@ th, td { padding: 5px }
     <p>
       <label>Task</label><br>
         <input type="radio" name="task" value="recognition" checked> Recognition<br>
-	<input type="radio" name="task" value="disambiguation"> <s>Disambiguation</s>
+	<input type="radio" name="task" value="disambiguation"> Disambiguation (only with Dandelion)
     </p>
     <p>
       <label>Processing method:</label><br>
@@ -81,6 +81,12 @@ th, td { padding: 5px }
 
     <label>Number of cells to process (use 1 for LLMs):</label><br>
     <input type="text" name="max_processed" required><br><br>
+
+    <p>
+      <label>Task</label><br>
+        <input type="radio" name="task" value="recognition" checked> Recognition<br>
+	<input type="radio" name="task" value="disambiguation"> Disambiguation (only with Dandelion)
+    </p>
 
     <label>Processing method:</label><br>
     <input type="radio" name="method" value="dandelion" onclick="toggleVisibility(false)"> Dandelion<br>

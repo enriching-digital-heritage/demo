@@ -90,6 +90,7 @@ def process_form_data():
     file_item = form["file"] if "file" in form else None
     column_names = [column_name.strip() for column_name in form.getfirst("column", "").strip().split(",")]
     method = form.getfirst("method", "").strip()
+    task = form.getfirst("task", "").strip()
     entities_file = form["entities_file"] if "entities_file" in form else None
     if entities_file is None or entities_file == "" or os.path.basename(entities_file.filename) == "":
         entities_path = ""
@@ -109,7 +110,7 @@ def process_form_data():
         with open(file_path, "w") as f:
             f.write(text)
             f.close()
-        return file_name, file_path, ["text"], 1, method, entities_filename, entities_path
+        return file_name, file_path, ["text"], 1, method, task, entities_filename, entities_path
     else:
         if not form["file"].filename:
             print("ERROR. No file uploaded")
@@ -130,7 +131,7 @@ def process_form_data():
         with open(file_path, "wb") as f:
             f.write(file_item.file.read())
             f.close()
-        return file_name, file_path, column_names, max_processed, method, entities_filename, entities_path
+        return file_name, file_path, column_names, max_processed, method, task, entities_filename, entities_path
 
 
 def read_data_file(file_name, file_path, column_names):
@@ -201,7 +202,8 @@ def process_with_spacy(text):
             print(f": {entity.text};")
 
 
-def process_with_dandelion(text):
+def process_with_dandelion(text, task):
+    table_style = "style=\"border: 1px; border-style: dotted; border-collapse: collapse; padding: 5px;\""
     with open("dandelion_token.txt", "r") as infile:
         dandelion_token = infile.read().strip()
         infile.close()
@@ -213,9 +215,13 @@ def process_with_dandelion(text):
     headers = {}
     response = requests.get(url, params=params, headers=headers)
     if response.status_code == 200:
-        print("<br>")
+        if task == "disambiguation":
+            print(f"<table {table_style}>")
+        else:
+            print("<br>")
         for entity in response.json()["annotations"]:
             entity_text = entity["spot"]
+            entity_url = entity['lod']['dbpedia']
             types = [type.split("/")[-1] for type in entity["types"]]
             if "Animal" in types or "Person" in types or "Deity" in types:
                 entity_label = "PER"
@@ -223,8 +229,15 @@ def process_with_dandelion(text):
                 entity_label = "LOC"
             else:
                 entity_label = "OTHER"
-            print_label(entity_label)
-            print(f": {entity_text};")
+            if task == "recognition": 
+                print_label(entity_label)
+                print(f": {entity_text};")
+            else:
+                url_title = entity_url.split("/")[-1]
+                print(f"<tr><td {table_style}>", entity_text, end="</td>")
+                print(f"<td {table_style}><a href=\"{entity_url}\">{url_title}</a></td></tr>")
+        if task == "disambiguation":
+            print("</table>")
     else:
         print(f"Request {counter} failed with status {response.status_code}")
 
@@ -274,7 +287,7 @@ def print_html_footer():
 
 
 print_html_header()
-file_name, file_path, column_names, max_processed, method, entities_filename, entities_path = process_form_data()
+file_name, file_path, column_names, max_processed, method, task, entities_filename, entities_path = process_form_data()
 data_df = read_data_file(file_name, file_path, column_names)
 if method in ["nametag3", "spacy"]:
     nlp, matcher = setup_spacy(entities_path, entities_filename)
@@ -283,19 +296,23 @@ counter = 0
 print("<ol>")
 start_time = datetime.datetime.now()
 for row_list in data_df.iter_rows():
+    if task != "recognition" and method != "dandelion":
+        print(f"Cannot perform task {task} with processing method {method}!")
+        break
     row_dict = dict(zip(data_df.columns, row_list))
     text = '\n'.join([str(row_dict[column_name] or "").strip() + "." for column_name in column_names if str(row_dict[column_name] or "").strip() != ""])
     print("<li><i>", text, "</i>")
     if method == "dandelion":
-        process_with_dandelion(text)
-    elif method == "llm":
-        process_with_llm(llm_prompt, text)
-    elif method == "nametag3":
-        process_with_nametag3(text)
-    elif method == "spacy":
-        process_with_spacy(text)
+        process_with_dandelion(text, task)
     else:
-        print(f"Unknown text processing method: {method}!")
+        if method == "llm":
+            process_with_llm(llm_prompt, text)
+        elif method == "nametag3":
+            process_with_nametag3(text)
+        elif method == "spacy":
+            process_with_spacy(text)
+        else:
+            print(f"Unknown text processing method: {method}!")
     print("</li><br>")
     counter += 1
     if counter >= max_processed:
