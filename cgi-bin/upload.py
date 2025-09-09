@@ -296,3 +296,4 @@ for row_list in data_df.iter_rows():
 print("</ol>")
 report_time_taken(start_time)
 print_html_footer()
+os.remove(file_path)
