@@ -24,9 +24,16 @@ def print_html_header():
 <head>
   <meta charset="UTF-8">
   <title>Processing results</title>
+  <base href="/enriching/" />
 </head>
 <body>
-<p><a href="/enriching">Home</a></p>
+<p>
+  <a href="/">Home</a>
+  | British Museum: <a href="bm.csv">text</a>; <a href="bm.txt">gold labels</a>
+  | Egyptian Museum: <a href="em.csv">text</a>; <a href="em.txt">gold labels</a>
+  | <a href="tagset.txt">Label set explanation</a>
+  | <a href="prompts.txt">Prompts</a>
+</p>
 """)
 
 
@@ -238,6 +245,8 @@ if task == "recognition":
 print("<table><tr><th align=\"left\">Id</th><th align=\"left\">System</th><th align=\"left\">Text</th></tr>")
 counter = 1
 if task == "recognition":
+    if len(machine_entities) == 0:
+        machine_entities = len(gold_entities) * [[]]
     for text, gold_entities_list, machine_entities_dict in zip(texts, gold_entities, machine_entities):
         print(f"<tr><td align=\"right\">{counter}</td>")
         show_text(text, gold_entities_list, machine_entities_dict, counter)
