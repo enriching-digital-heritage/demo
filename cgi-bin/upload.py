@@ -31,7 +31,7 @@ def print_html_header():
 <body>
 <p>
   <a href="/enriching">Home</a>
-  | British Museum: <a href="bm.csv">text</a>; <a href="bm.txt">gold labels</a>
+  | British Museum: <a href="bm.csv">text</a>; <a href="bm.txt">gold labels</a>; <a href="disambiguation_annotation.csv">gold links</a>;
   | Egyptian Museum: <a href="em.csv">text</a>; <a href="em.txt">gold labels</a>
   | <a href="tagset.txt">Label set explanation</a>
   | <a href="prompts.txt">Prompts</a>
